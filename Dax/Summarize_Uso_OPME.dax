@@ -1,0 +1,64 @@
+// Criação da tabela virtual para viabilizar a criação de um gráfico de linhas que possua uma linha específica com o total de itens por categoria.
+Uso_OPME_Summarize_totais_linhas_categoria = 
+VAR Detalhes =
+    SUMMARIZE(
+        fUso_OPME_Utilizacao,
+        fUso_OPME_Utilizacao[Data Final],
+        fUso_OPME_Utilizacao[Cód.Parceiro],
+        fUso_OPME_Utilizacao[Cód.Produto],
+        dProdutos_OPME[Categoria],
+        dProdutos_OPME[Sub categoria],
+        dProdutos_OPME[LINHA],
+        dCLientes_Giro_OPME[UF],
+        "Quantidade Total de Itens", SUM(fUso_OPME_Utilizacao[Qtd Itens])
+    )
+
+VAR TotaisCategoria_Linha =
+    SUMMARIZE(
+        fUso_OPME_Utilizacao,
+        fUso_OPME_Utilizacao[Data Final],
+        dProdutos_OPME[Categoria],
+        dProdutos_OPME[LINHA],
+        dCLientes_Giro_OPME[UF],
+        "Quantidade Total de Itens", SUM(fUso_OPME_Utilizacao[Qtd Itens])
+    )
+
+VAR TotaisFormatados =
+    SELECTCOLUMNS(
+        TotaisCategoria_Linha,
+        "Data Final", [Data Final],
+        "Cód.Parceiro", BLANK(),
+        "Cód.Produto", BLANK(),
+        "Categoria", [Categoria],
+        "Sub categoria", "TOTAL",
+        "LINHA", [LINHA],
+        "UF", [UF],
+        "Quantidade Total de Itens", [Quantidade Total de Itens]
+    )
+
+VAR TabelaUnificada =
+    UNION(
+        SELECTCOLUMNS(
+            Detalhes,
+            "Data Final", [Data Final],
+            "Cód.Parceiro", [Cód.Parceiro],
+            "Cód.Produto", [Cód.Produto],
+            "Categoria", [Categoria],
+            "Sub categoria", [Sub categoria],
+            "LINHA", [LINHA],
+            "UF", [UF],
+            "Quantidade Total de Itens", [Quantidade Total de Itens]
+        ),
+        TotaisFormatados
+    )
+
+RETURN
+    ADDCOLUMNS(
+        TabelaUnificada,
+        "Legenda",
+            IF(
+                [Sub categoria] = "TOTAL",
+                " " & "TOTAL - " & [Categoria],
+                [Sub categoria]
+            )
+    )
